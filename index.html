@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Focus Timer and Growth Guide</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        /* Custom Colors and Styles */
+        :root {
+            --color-primary: #59B19C; /* Main mint green */
+            --color-accent: #F0F0D2; /* Light yellow background */
+            --color-soil: #845642; /* Dark brown soil */
+            --color-tree: #38A169; /* Tree green */
+            --color-guide-bg: #F8F9FA; /* Off-white for guide section */
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--color-primary);
+        }
+        .circle-shadow {
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        #timer-display {
+            font-size: 6rem; /* 96px */
+            line-height: 1;
+            font-weight: 600;
+        }
+        #plant-button {
+            transition: all 0.1s ease-in-out;
+            box-shadow: 0 4px 0 0 #438f7c;
+        }
+        #plant-button:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 0 #438f7c;
+        }
+        .tree-container {
+            width: 150px;
+            height: 150px;
+            overflow: hidden;
+            position: relative;
+        }
+        .progress-dot {
+            cursor: grab;
+            touch-action: none;
+        }
+        /* Style for the professional guide section */
+        .guide-card {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s;
+        }
+        .guide-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+        }
+        .section-header {
+            font-family: 'Inter', sans-serif;
+            font-weight: 800;
+            color: #1F2937; /* Dark Gray */
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid;
+        }
+        .clean-list-item {
+            padding-left: 0.5rem;
+            margin-bottom: 0.5rem;
+            line-height: 1.5;
+        }
+        .bold-text {
+            font-weight: 700; /* Directly apply bold */
+        }
+        #motivational-message {
+            min-height: 1.5rem; /* Reserve space */
+            transition: opacity 0.5s ease-in-out; /* Smooth fade animation */
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app" class="min-h-screen flex flex-col text-white">
+        <!-- Header Section -->
+        <header class="p-4 flex justify-between items-center text-white">
+            <button class="p-2 rounded-full focus:outline-none hover:bg-white/10 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="18" x2="20" y2="18"></line></svg>
+            </button>
+            <div class="flex items-center space-x-2">
+                <div class="w-6 h-6 rounded-full bg-green-400"></div>
+                <span class="font-bold text-lg">Focus Tree</span>
+            </div>
+            <div class="flex items-center space-x-1 bg-black/10 pr-3 pl-2 py-1 rounded-full font-semibold text-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-400 fill-yellow-400"><path d="M16 2.1c2 0 3.8.7 4.9 2H19A2 2 0 0 0 17 6v4a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V6c0-1.1-.9-2-2-2H3c.8-1.3 2.6-2 4.6-2C10 2 12 3 12 6s-2 4-2 6v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-4c0-1.6 1.5-3 3-3V6a2 2 0 0 0-2-2h-3.4c.5-1.3 1.3-2 2.4-2h1.5z"/></svg>
+                <span id="coin-count">138</span>
+            </div>
+        </header>
+
+        <!-- User ID Display (Mandatory for Firestore Apps) -->
+        <div class="text-xs text-center font-mono opacity-50 mb-2">
+            User ID: <span id="user-id-display">Initializing...</span>
+        </div>
+
+        <!-- Main Content (Timer Area) -->
+        <main class="flex-grow flex flex-col items-center justify-start p-6 pt-0 text-center">
+            
+            <p class="text-lg mb-6 font-light">Set your Focus Duration (10 - 180 min)</p>
+
+            <!-- Motivational Message Display Area -->
+            <div id="motivational-message" class="text-yellow-200 text-sm font-semibold mb-3 opacity-0">
+                <!-- Message will appear here when timer starts and cycle with fade animation -->
+            </div>
+            
+            <!-- Tree Visual Circle and Draggable Progress Ring -->
+            <div id="tree-visual-container" class="w-64 h-64 md:w-80 md:h-80 relative rounded-full circle-shadow flex items-center justify-center" style="background-color: var(--color-accent);">
+                
+                <!-- SVG Tree Graphic (Size is controlled by JS) -->
+                <div class="tree-container absolute bottom-0">
+                    <svg id="tree-svg" viewBox="0 0 100 100" class="w-full h-full" style="transform: scale(0.5); transition: transform 1s linear;">
+                        <!-- Soil Mound -->
+                        <path d="M 0 85 Q 50 60 100 85 L 100 100 L 0 100 Z" fill="var(--color-soil)"></path>
+                        <!-- Trunk -->
+                        <rect x="47" y="50" width="6" height="15" fill="#a0522d"></rect>
+                        <!-- Leaves (Simple Triangle Stack) -->
+                        <polygon points="50,45 35,65 65,65" fill="var(--color-tree)"></polygon>
+                        <polygon points="50,30 30,50 70,50" fill="var(--color-tree)"></polygon>
+                        <polygon points="50,15 25,35 75,35" fill="var(--color-tree)"></polygon>
+                    </svg>
+                </div>
+
+                <!-- Progress Ring Indicator -->
+                <div id="progress-indicator-ring" class="absolute inset-0 rounded-full" style="border: 4px solid rgba(255, 255, 255, 0.4);">
+                    <div id="progress-dot" class="absolute w-5 h-5 rounded-full bg-green-500 transform -translate-x-1/2 -translate-y-1/2 progress-dot" 
+                        style="transition: none;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timer Display -->
+            <div id="timer-display" class="mt-4 mb-6 text-white select-none">10:00</div>
+
+            <!-- Action Button -->
+            <button id="plant-button" class="px-16 py-4 bg-green-400 text-lg font-bold rounded-xl text-white tracking-wider" style="background-color: #6CD7B7;">
+                Plant Your Focus
+            </button>
+        </main>
+
+        <!-- Professional Growth Strategy Guide Section -->
+        <section class="bg-white pt-8 pb-10 mt-4 rounded-t-3xl shadow-2xl">
+            <div class="max-w-4xl mx-auto px-6">
+                <h2 class="text-3xl section-header border-green-500 text-center mb-8">📚 The Disciplined Student: A Guide to Focused Growth 🧠</h2>
+                
+                <div class="grid lg:grid-cols-2 gap-8">
+
+                    <!-- 1. Strategy, Time Management, and Planning -->
+                    <div class="guide-card">
+                        <h3 class="font-bold text-xl text-blue-700 mb-3 section-header border-blue-200">
+                            1. Smart Time Management & Planning 📅
+                        </h3>
+                        <p class="mb-4 text-gray-700 text-base">
+                            Good time management means working smartly, not just working for a long time. Clear plans help you focus deeply and waste less time.
+                        </p>
+                        <ol class="list-decimal list-inside space-y-3 text-sm ml-4 text-gray-700">
+                            <li class="clean-list-item"><strong class="bold-text">The Daily 3 Principle:</strong> Every evening, choose the three most important things (MITs) you must finish tomorrow. This gives you a clear start.</li>
+                            <li class="clean-list-item"><strong class="bold-text">Time Blocking:</strong> Instead of a long to-do list, schedule exact times for tasks. For example: '10:00 AM to 12:00 PM: Focus on Math Homework'.</li>
+                            <li class="clean-list-item"><strong class="bold-text">Plan Creation:</strong> Use a weekly plan for big goals and a quick nightly check to set your three main tasks for the next day.</li>
+                            <li class="clean-list-item"><strong class="bold-text">Real-Life Example:</strong> A person who spends 90 minutes focusing without stopping achieves more than someone who studies for five hours with constant phone checks. Focus is power.</li>
+                        </ol>
+                    </div>
+
+                    <!-- 2. Motivation and Discipline (Life Skill) -->
+                    <div class="guide-card">
+                        <h3 class="font-bold text-xl text-red-700 mb-3 section-header border-red-200">
+                            2. Motivation, Discipline, and Life Skills 💪
+                        </h3>
+                        <p class="mb-4 text-gray-700 text-base">
+                            Motivation is a feeling that comes and goes. Discipline is the solid habit that keeps you working, even when you don't feel like it. This is the real life skill.
+                        </p>
+                        <ul class="list-disc list-inside space-y-3 text-sm ml-4 text-gray-700">
+                            <li class="clean-list-item"><strong class="bold-text">The 5-Minute Rule:</strong> If a task feels too hard, just promise yourself to work on it for five minutes. Most of the time, you will keep going once you start.</li>
+                            <li class="clean-list-item"><strong class="bold-text">Know Your 'Why':</strong> Connect your daily work to a bigger goal (like a great job or college). When the work gets tough, this 'Why' will push you forward.</li>
+                            <li class="clean-list-item"><strong class="bold-text">No Distractions:</strong> Before starting your Focus Timer, put your phone and other distractions far away. Controlling your environment helps you control your focus.</li>
+                            <li class="clean-list-item"><strong class="bold-text">Real-Life Example:</strong> A skilled musician doesn't wait to 'feel like practicing'; they practice at the same time every day. Their habit (discipline) brings success.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 3. Effective Study Tips and Techniques (Full Width) -->
+                <div class="guide-card mt-8 bg-gray-50 border-l-8 border-yellow-500">
+                    <h3 class="font-bold text-xl text-gray-800 mb-4 section-header border-yellow-300">
+                        3. Best Study Tips for Remembering Things ✨
+                    </h3>
+                    <div class="grid md:grid-cols-3 gap-6 text-gray-700">
+                        <div class="col-span-1">
+                            <h4 class="font-semibold text-lg text-yellow-600 mb-2">Active Recall</h4>
+                            <p class="text-sm">
+                                Test yourself! Close your book and try to remember the information. This works much better than just reading your notes again.
+                            </p>
+                        </div>
+                        <div class="col-span-1">
+                            <h4 class="font-semibold text-lg text-yellow-600 mb-2">Spaced Repetition</h4>
+                            <p class="text-sm">
+                                Review your lessons over time (e.g., today, in 3 days, in 1 week). This stops you from forgetting things and moves knowledge into your long-term memory.
+                            </p>
+                        </div>
+                        <div class="col-span-1">
+                            <h4 class="font-semibold text-lg text-yellow-600 mb-2">The Feynman Technique</h4>
+                            <p class="text-sm">
+                                Learn a topic, then try to teach it simply to a friend or an empty chair. If you can't explain it easily, you need to study it more.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="mt-8 text-sm italic text-gray-500 text-center font-medium">
+                    "Every time you focus is a seed planted. Keep planting, and your knowledge will grow into a strong forest."
+                </p>
+
+            </div>
+        </section>
+
+        <!-- Footer: Created By Ayush -->
+        <footer class="p-3 text-center text-xs opacity-80" style="background-color: rgba(0, 0, 0, 0.1);">
+            Created by Ayush
+        </footer>
+
+        <!-- Loading Indicator (Hidden by default) -->
+        <div id="loading" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <div class="p-4 bg-white rounded-lg shadow-xl text-gray-800 flex items-center space-x-3">
+                <svg class="animate-spin h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>Initializing Focus...</span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Firebase SDKs and JavaScript Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // Set Firestore log level to Debug
+        setLogLevel('Debug');
+
+        // --- GLOBAL & FIREBASE SETUP ---
+        let app, auth, db;
+        let userId = 'anonymous';
+        let isAuthReady = false;
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        const loadingIndicator = document.getElementById('loading');
+        const userIdDisplay = document.getElementById('user-id-display');
+        
+        const showLoading = (message = 'Connecting...') => {
+            loadingIndicator.querySelector('span').textContent = message;
+            loadingIndicator.classList.remove('hidden');
+        };
+        const hideLoading = () => loadingIndicator.classList.add('hidden');
+
+        async function initFirebase() {
+            if (!firebaseConfig) {
+                console.error("Firebase config not available. Running in local mode.");
+                return;
+            }
+
+            showLoading('Connecting to Focus Tree...');
+            try {
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        userIdDisplay.textContent = userId;
+                        isAuthReady = true;
+                        setupFocusStatsListener();
+                    } else {
+                        userId = crypto.randomUUID(); // Anonymous ID
+                        userIdDisplay.textContent = 'Anonymous - ' + userId.substring(0, 8) + '...';
+                        isAuthReady = true;
+                        setupFocusStatsListener();
+                    }
+                    hideLoading();
+                });
+
+            } catch (error) {
+                console.error("Firebase Initialization Error:", error);
+                hideLoading();
+                isAuthReady = true;
+            }
+        }
+
+        // --- FIREBASE DATA FUNCTIONS ---
+        const COINS_COLLECTION = `artifacts/${appId}/users`;
+        
+        const getFocusStatsRef = (uid) => {
+            return doc(db, COINS_COLLECTION, uid, 'stats', 'focus_stats');
+        };
+
+        function setupFocusStatsListener() {
+            if (!db || !isAuthReady) return;
+
+            const statsRef = getFocusStatsRef(userId);
+            
+            onSnapshot(statsRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    focusState.coins = data.coins || 0;
+                    updateCoinDisplay();
+                } else {
+                    // Initialize if document doesn't exist (First time user)
+                    setDoc(statsRef, { coins: 138, userId: userId });
+                    focusState.coins = 138;
+                    updateCoinDisplay();
+                }
+            }, (error) => {
+                console.error("Error setting up snapshot listener:", error);
+            });
+        }
+
+        async function addCoins(amount) {
+            if (!db || !userId) {
+                focusState.coins += amount;
+                updateCoinDisplay();
+                return;
+            }
+            
+            const statsRef = getFocusStatsRef(userId);
+            const newCoins = focusState.coins + amount;
+            
+            try {
+                await setDoc(statsRef, { coins: newCoins, userId: userId }, { merge: true });
+                focusState.coins = newCoins;
+            } catch (error) {
+                console.error("Error adding coins:", error);
+            }
+        }
+
+
+        // --- TIMER & UI STATE ---
+        const MIN_DURATION_MINUTES = 10;
+        const MAX_DURATION_MINUTES = 180; // 3 hours
+        const REWARD_COINS = 5;
+        const TREE_SCALE_MIN = 0.5; // Small plant when stopped
+        const TREE_SCALE_MAX = 1.0; // Full tree when complete
+
+        const focusState = {
+            initialDuration: MIN_DURATION_MINUTES * 60, // Default 10 minutes (seconds)
+            remaining: MIN_DURATION_MINUTES * 60,
+            interval: null,
+            messageInterval: null, // New interval for messages
+            isRunning: false,
+            coins: 138,
+            isDragging: false
+        };
+
+        const motivationalMessages = [
+            "Don't look at me! Go back to your study table. 📚",
+            "मुझे मत देखो! जाकर पढ़ाई करो। 🧠",
+            "Stay Focused. Your Tree is Growing! 🌳",
+            "This is deep work time. Put that phone away! 🤫",
+            "Focus Mode: Activated. Discipline is the key. 💪",
+            "Commit to the Time. You Got This! ✨",
+            "The time is now. Make every second count. ⏱️",
+            "बस 5 मिनट और। लगे रहो! 🔥 (Just 5 more minutes. Keep going! 🔥)",
+            "Don't kill the tree! Keep working. 🔪",
+            "Your future self will thank you for this focus. ✅",
+            "ध
